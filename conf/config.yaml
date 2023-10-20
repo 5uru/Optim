@@ -1,0 +1,10 @@
+llms:
+  name: "banana_dev"
+  api_key: ${oc.env:API_KEY}
+
+  model_url: ${oc.env:MODEL_URL}
+
+embeddings:
+  model_name: "sentence-transformers/all-mpnet-base-v2"
+  device: "cpu"
+  normalize_embeddings: False
