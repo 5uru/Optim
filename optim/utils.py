@@ -1,6 +1,5 @@
-from langchain.embeddings import HuggingFaceEmbeddings
-from omegaconf import OmegaConf
 from hydra import initialize, compose
+from langchain.embeddings import HuggingFaceEmbeddings
 
 
 def embedding_model():
@@ -8,9 +7,9 @@ def embedding_model():
         cfg = compose(config_name="config.yaml")
 
     # embeddings model
-    model_name = cfg.embeddings.model_name
-    model_kwargs = {'device': cfg.embeddings.device}
-    encode_kwargs = {'normalize_embeddings': cfg.embeddings.normalize_embeddings}
+    model_name = cfg.embeddings.model_namÒe
+    model_kwargs = {"device": cfg.embeddings.device}
+    encode_kwargs = {"normalize_embeddings": cfg.embeddings.normalize_embeddings}
     hf_embeddings = HuggingFaceEmbeddings(
         model_name=model_name,
         model_kwargs=model_kwargs,
