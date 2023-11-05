@@ -3,7 +3,7 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts import PromptTemplate
 
-from llm_loader import main as llm_loader
+from optim.llm_loader import main as llm_loader
 
 template = """Context: You are a support worker in a hospital emergency department. A patient contacts us regarding a 
 health concern. Your role as a friendly representative is to collect pertinent information to gain a full 
@@ -15,7 +15,7 @@ details, not provide aid. Do not create information, it must be provided by the 
 obtained, inform them that an agent will be with them shortly using the phrase "An agent". will attend to you 
 shortly" only when you possess a concise overview of the issue (consisting of at least one sentence from the user), 
 an order number, and an email address. Additionally, ensure that the customer is no longer in need of assistance. 
-Here is the record of your conversations with the customer:\n\n {conversation}\n Agent:\n[MASK]."""
+Here is the record of your conversations with the customer:\n\n {conversation}\n Agent:\n"""
 
 
 def main(chat_history):
@@ -29,6 +29,6 @@ def main(chat_history):
 
     # Define StuffDocumentsChain
     stuff_chain = StuffDocumentsChain(
-        llm_chain=llm_chain, document_variable_name="conversation", verbose=True
+        llm_chain=llm_chain, document_variable_name="conversation", verbose=False
     )
     return stuff_chain.run([conversation_load])

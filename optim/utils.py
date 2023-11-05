@@ -10,16 +10,8 @@ def embedding_model():
     model_name = cfg.embeddings.model_namÒe
     model_kwargs = {"device": cfg.embeddings.device}
     encode_kwargs = {"normalize_embeddings": cfg.embeddings.normalize_embeddings}
-    hf_embeddings = HuggingFaceEmbeddings(
+    return HuggingFaceEmbeddings(
         model_name=model_name,
         model_kwargs=model_kwargs,
         encode_kwargs=encode_kwargs,
     )
-    return hf_embeddings
-
-
-def get_chat_history(inputs) -> str:
-    res = []
-    for human, ai in inputs:
-        res.append(f"Customer:{human}\nAgent:{ai}")
-    return "\n".join(res)
