@@ -11,7 +11,7 @@ st.set_page_config(page_title=" Optim Assistant", layout="wide")
 
 @st.cache_data
 # save the chat name in the cache
-def get_constants():
+def get_constants() -> dict:
     """
     Generates a random UUID and convert it to a string
     :return: dictionary with the chat name as a key and the UUID as a value.
