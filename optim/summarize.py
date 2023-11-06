@@ -5,9 +5,9 @@ from langchain.prompts import PromptTemplate
 
 from llm_loader import main as llm_loader
 
-SUMMARY_PROMPT = """
-    Please provide a summary of the conversation below:\n\n###\n\n{conversation}\nThe summary is as follows: [MASK].
-    """
+# open the template file
+with open("Data/chat_prompt.txt", "r") as f:
+    SUMMARY_PROMPT = f.read()
 
 
 def main(conversation: str):
@@ -30,4 +30,5 @@ def main(conversation: str):
     stuff_chain = StuffDocumentsChain(
         llm_chain=llm_chain, document_variable_name="conversation", verbose=True
     )
+    # Run the chain
     return stuff_chain.run([conversation_load])
