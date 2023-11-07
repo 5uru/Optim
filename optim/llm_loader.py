@@ -24,7 +24,7 @@ def main():
         )
         # Return the LLM
         return llm
-    elif cfg.llm.name == "openai":
+    if cfg.llm.name == "openai":
         # Load the OpenAI
         return openai_call()
 
