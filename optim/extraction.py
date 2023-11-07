@@ -145,6 +145,11 @@ class UserInfo(BaseModel):
     prognosis: Optional[bool]
 
 
+# open the template file
+with open("Data/extraction_prompt.txt", "r") as f:
+    QUERY = f.read()
+
+
 def main(conversation: str):
     llm = llm_loader()
     schema, validator = from_pydantic(UserInfo)
@@ -154,6 +159,7 @@ def main(conversation: str):
     )
     query = f"""Please extract the patient's different syntone from this conversation.\n\n Please confirm the 
     presence of these symptoms with a Boolean (True or False).\n\n Do NOT include any additional information. The 
-    output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.\n\n {conversation}"""
+    output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.\n\n
+     {conversation}"""
 
     return chain.run(query)["validated_data"]
