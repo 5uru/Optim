@@ -1,3 +1,6 @@
-from optim.chat_manager import main
+import uuid
 
-print(main("hello"))
+
+# Generates a random UUID and convert it to a string
+chat_name = str(uuid.uuid4())
+print(chat_name)
