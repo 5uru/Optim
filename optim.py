@@ -1,6 +1,8 @@
 # Import necessary  libraries
 
+import json
 import uuid
+from datetime import datetime
 
 import streamlit as st
 
@@ -47,6 +49,7 @@ if user_message := st.chat_input():
     response = chat_manager(conversation)
     st.session_state.messages.append({"role": "Agent", "content": response})
     st.chat_message("assistant").write(response)
-    # save the conversation in a file
-    with open(f"Chat-Data/{constants['CHAT_NAME']}.txt", "w") as f:
-        f.write(conversation)
+    # save the conversation in a file json file
+    with open(f"conversations/{constants['CHAT_NAME']}.json", "w") as f:
+        data = {"messages": conversation, "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        json.dump(data, f)
