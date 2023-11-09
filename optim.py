@@ -51,5 +51,8 @@ if user_message := st.chat_input():
     st.chat_message("assistant").write(response)
     # save the conversation in a file json file
     with open(f"conversations/{constants['CHAT_NAME']}.json", "w") as f:
-        data = {"messages": conversation, "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        data = {
+            "messages": conversation,
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
         json.dump(data, f)
