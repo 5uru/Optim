@@ -1,7 +1,7 @@
 # Import necessary  libraries
 
+import glob
 import json
-import uuid
 from datetime import datetime
 
 import streamlit as st
@@ -13,21 +13,36 @@ st.set_page_config(page_title=" Optim Assistant", layout="wide")
 
 @st.cache_data
 # save the chat name in the cache
-def get_constants() -> dict:
+def patient_position() -> dict:
     """
-    Generates a random UUID and convert it to a string
-    :return: dictionary with the chat name as a key and the UUID as a value.
+    This code defines a function named patient_position that returns a dictionary with a single key-value pair. The
+    function finds the maximum file name in a directory, increments it by 1, and returns it as the value for the key
+    "CHAT_NAME" in the dictionary.
+    :return: a dictionary with a single key-value pair
     :rtype: dict[str, str]
     :Example:
-    >>> get_constants()
-    {'CHAT_NAME': 'a7a8e0d3-3e8d-4f3c-8a1d-9d9e8d9e8d9e'}
+    >>> patient_position()
+    {'CHAT_NAME': '1'}
     """
-    return {"CHAT_NAME": str(uuid.uuid4())}
+    # get all the json files in the conversations directory
+    json_files = glob.glob('conversations/*.json')
+    # delete ".json" and "conversations/" from the file name
+    json_files = [file.replace(".json", "").replace("conversations/", "") for file in json_files]
+    json_files = [int(file) for file in json_files]  # convert the file name to an integer
+    try:
+        max_names = max(json_files)  # get the maximum file name
+    except ValueError:
+        max_names = 0  # if the directory is empty, set max_names to 0
+    file_name = str(max_names + 1)  # increment the file name by 1
+    return {"CHAT_NAME": file_name}
 
 
-constants = get_constants()
+# get the chat name from the cache
+constants = patient_position()
 
 st.title("💬 Chatbot")
+# write the patient number position
+st.text("Patient Number: " + constants["CHAT_NAME"])
 # session state for storing messages
 if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "Agent", "content": "How can I help you?"}]
