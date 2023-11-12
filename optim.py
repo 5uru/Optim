@@ -25,10 +25,14 @@ def patient_position() -> dict:
     {'CHAT_NAME': '1'}
     """
     # get all the json files in the conversations directory
-    json_files = glob.glob('conversations/*.json')
+    json_files = glob.glob("conversations/*.json")
     # delete ".json" and "conversations/" from the file name
-    json_files = [file.replace(".json", "").replace("conversations/", "") for file in json_files]
-    json_files = [int(file) for file in json_files]  # convert the file name to an integer
+    json_files = [
+        file.replace(".json", "").replace("conversations/", "") for file in json_files
+    ]
+    json_files = [
+        int(file) for file in json_files
+    ]  # convert the file name to an integer
     try:
         max_names = max(json_files)  # get the maximum file name
     except ValueError:
@@ -66,5 +70,8 @@ if user_message := st.chat_input():
     st.chat_message("assistant").write(response)
     # save the conversation in a file json file
     with open(f"conversations/{constants['CHAT_NAME']}.json", "w") as f:
-        data = {"messages": conversation, "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        data = {
+            "messages": conversation,
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
         json.dump(data, f)
