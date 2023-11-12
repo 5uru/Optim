@@ -45,7 +45,7 @@ st.title("💬 Chatbot")
 st.text("Patient Number: " + constants["CHAT_NAME"])
 # session state for storing messages
 if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "Agent", "content": "How can I help you?"}]
+    st.session_state["messages"] = [{"role": "Agent", "content": "Hello"}]
 
 # display the messages
 for msg in st.session_state.messages:

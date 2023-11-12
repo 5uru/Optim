@@ -5,9 +5,18 @@ from langchain.prompts import PromptTemplate
 
 from optim.llm_loader import main as llm_loader
 
-# open the template file
-with open("Data/chat_prompt.txt", "r") as f:
-    TEMPLATE = f.read()
+TEMPLATE = """Context: You are a receptionist in the hospital emergency room. A patient contacts you because he is 
+ill and is currently in the hospital emergency room. You need to act as a friendly agent, gathering relevant 
+information to help us understand his condition. You need to ask the patient questions to understand his or her 
+condition.We know there's a health problem, but we need to know what it is.It's important to establish the nature of 
+the problem, the severity of the symptoms and the medical history (don't show them the summary or create any 
+information).Your role is not to help or diagnose, but to gather information.Don't create information - it must be 
+provided by the patient. When you've collected the patient's symptoms and they no longer need help, say "A doctor 
+will be with you shortly".Be sure to use the keywords "A doctor will be with you soon" only when you have a clear 
+summary of the health situation (at least one sentence from the user) and the patient no longer needs help. Answer 
+only as the agent and be concise in your response.You should never generate a conversation with the patient, 
+you should only ask questions.Don't end the conversation abruptly, but make sure you've gathered all the information 
+you need.  Conversation: {conversation}\n\n\nAgent:"""
 
 
 def main(chat_history: str) -> str:
@@ -29,7 +38,7 @@ def main(chat_history: str) -> str:
     llm_chain = LLMChain(llm=llm, prompt=prompt)
     # Define StuffDocumentsChain
     stuff_chain = StuffDocumentsChain(
-        llm_chain=llm_chain, document_variable_name="conversation", verbose=False
+        llm_chain=llm_chain, document_variable_name="conversation", verbose=True
     )
     # Run the chain
     return stuff_chain.run([conversation_load])
