@@ -1,5 +1,9 @@
-import uuid
+# open conversations/11.json
+import json
 
-# Generates a random UUID and convert it to a string
-chat_name = str(uuid.uuid4())
-print(chat_name)
+from optim.extraction import main as extract
+
+with open("./conversations/11.json", "r") as f:
+    conversation = json.load(f)
+
+print(extract(conversation["messages"]))

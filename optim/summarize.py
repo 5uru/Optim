@@ -5,9 +5,8 @@ from langchain.prompts import PromptTemplate
 
 from llm_loader import main as llm_loader
 
-# open the template file
-with open("Data/chat_prompt.txt", "r") as f:
-    SUMMARY_PROMPT = f.read()
+# LLM prompt template for summarization
+SUMMARY_PROMPT = """ Can you write a concise and comprehensive summary of {conversation}?"""
 
 
 def main(conversation: str):

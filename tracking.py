@@ -6,7 +6,16 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.row import row
 from streamlit_extras.stylable_container import stylable_container
 
+from optim.evaluate import main as evaluate
+
 st.set_page_config(page_title=" Optim Tracking", layout="wide")
+
+
+@st.cache_data
+def get_data():
+    # evaluate the conversation data
+    data = evaluate()
+    #
 
 
 def card():
