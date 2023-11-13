@@ -23,9 +23,11 @@ def update_chat(patient: str):
 
 def main():
     # get all the json files in the conversations directory
-    json_files = glob.glob('./conversations/*.json')
+    json_files = glob.glob("./conversations/*.json")
     # delete ".json" and "conversations/" from the file name
-    patient_list = [file.replace(".json", "").replace("./conversations/", "") for file in json_files]
+    patient_list = [
+        file.replace(".json", "").replace("./conversations/", "") for file in json_files
+    ]
     # open "data.json" for reading
     with open("./data.json", "r") as f:
         data = json.load(f)
