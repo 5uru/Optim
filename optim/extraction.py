@@ -1,201 +1,270 @@
-import json
-from typing import Optional
+import ast
 
-from kor import create_extraction_chain
-from kor import from_pydantic
-from pydantic import BaseModel, Field
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.llm import LLMChain
+from langchain.docstore.document import Document
+from langchain.prompts import PromptTemplate
 
 from optim.llm_loader import main as llm_loader
 
+# LLM prompt template
+# I have separated the prompt template into four parts to make it easier to read and reduce the number of characters.
+SYMPTOMS1 = """
+Your goal is to extract structured information from the user's input that matches the form described 
+below. When extracting information please make sure it matches the type information exactly. Do not add any 
+attributes that do not appear in the schema shown below.
 
-# Pydantic data class
-class Symptoms1(BaseModel):
-    # Symptoms
-    itching: Optional[bool] = Field(description="Does the patient have the symptom of itching?")
-    skin_rash: Optional[bool] = Field(description="Does the patient have the symptom of skin rash?")
-    nodal_skin_eruptions: Optional[bool] = Field(
-        description="Does the patient have the symptom of nodal skin eruptions?")
-    continuous_sneezing: Optional[bool] = Field(description="Does the patient have the symptom of continuous sneezing?")
-    shivering: Optional[bool] = Field(description="Does the patient have the symptom of shivering?")
-    chills: Optional[bool] = Field(description="Does the patient have the symptom of chills?")
-    joint_pain: Optional[bool] = Field(description="Does the patient have the symptom of joint pain?")
-    stomach_pain: Optional[bool] = Field(description="Does the patient have the symptom of stomach pain?")
-    acidity: Optional[bool] = Field(description="Does the patient have the symptom of acidity?")
-    ulcers_on_tongue: Optional[bool] = Field(description="Does the patient have the symptom of ulcers on tongue?")
-    muscle_wasting: Optional[bool] = Field(description="Does the patient have the symptom of muscle wasting?")
-    vomiting: Optional[bool] = Field(description="Does the patient have the symptom of vomiting?")
-    burning_micturition: Optional[bool] = Field(description="Does the patient have the symptom of burning micturition?")
-    spotting_urination: Optional[bool] = Field(description="Does the patient have the symptom of spotting urination?")
-    fatigue: Optional[bool] = Field(description="Does the patient have the symptom of fatigue?")
-    weight_gain: Optional[bool] = Field(description="Does the patient have the symptom of weight gain?")
-    anxiety: Optional[bool] = Field(description="Does the patient have the symptom of anxiety?")
-    cold_hands_and_feets: Optional[bool] = Field(
-        description="Does the patient have the symptom of cold hands and feet?")
-    mood_swings: Optional[bool] = Field(description="Does the patient have the symptom of mood swings?")
-    weight_loss: Optional[bool] = Field(description="Does the patient have the symptom of weight loss?")
-    restlessness: Optional[bool] = Field(description="Does the patient have the symptom of restlessness?")
-    lethargy: Optional[bool] = Field(description="Does the patient have the symptom of lethargy?")
-    patches_in_throat: Optional[bool] = Field(description="Does the patient have the symptom of patches in throat?")
+itching: boolean with value True or False (Does the patient have the symptom of itching?)
+skin_rash: boolean with value True or False (Does the patient have the symptom of skin rash?)
+nodal_skin_eruptions: boolean with value True or False (Does the patient have the symptom of nodal skin eruptions?)
+continuous_sneezing: boolean with value True or False (Does the patient have the symptom of continuous sneezing?)
+shivering: boolean with value True or False (Does the patient have the symptom of shivering?)
+chills: boolean with value True or False (Does the patient have the symptom of chills?)
+joint_pain: boolean with value True or False (Does the patient have the symptom of joint pain?)
+stomach_pain: boolean with value True or False (Does the patient have the symptom of stomach pain?)
+acidity: boolean with value True or False (Does the patient have the symptom of acidity?)
+ulcers_on_tongue: boolean with value True or False (Does the patient have the symptom of ulcers on tongue?)
+muscle_wasting: boolean with value True or False (Does the patient have the symptom of muscle wasting?)
+vomiting: boolean with value True or False (Does the patient have the symptom of vomiting?)
+burning_micturition: boolean with value True or False (Does the patient have the symptom of burning micturition?)
+spotting_urination: boolean with value True or False (Does the patient have the symptom of spotting urination?)
+fatigue: boolean with value True or False (Does the patient have the symptom of fatigue?)
+weight_gain: boolean with value True or False (Does the patient have the symptom of weight gain?)
+anxiety: boolean with value True or False (Does the patient have the symptom of anxiety?)
+cold_hands_and_feets: boolean with value True or False (Does the patient have the symptom of cold hands and feet?)
+mood_swings: boolean with value True or False (Does the patient have the symptom of mood swings?)
+weight_loss: boolean with value True or False (Does the patient have the symptom of weight loss?)
+restlessness: boolean with value True or False (Does the patient have the symptom of restlessness?)
+lethargy: boolean with value True or False (Does the patient have the symptom of lethargy?)
+patches_in_throat: boolean with value True or False (Does the patient have the symptom of patches in throat?)
 
-
-class Symptoms2(BaseModel):
-    irregular_sugar_level: Optional[bool] = Field(
-        description="Does the patient have the symptom of irregular sugar level?")
-    cough: Optional[bool] = Field(description="Does the patient have the symptom of cough?")
-    high_fever: Optional[bool] = Field(description="Does the patient have the symptom of high fever?")
-    sunken_eyes: Optional[bool] = Field(description="Does the patient have the symptom of sunken eyes?")
-    breathlessness: Optional[bool] = Field(description="Does the patient have the symptom of breathlessness?")
-    sweating: Optional[bool] = Field(description="Does the patient have the symptom of sweating?")
-    dehydration: Optional[bool] = Field(description="Does the patient have the symptom of dehydration?")
-    indigestion: Optional[bool] = Field(description="Does the patient have the symptom of indigestion?")
-    headache: Optional[bool] = Field(description="Does the patient have the symptom of headache?")
-    yellowish_skin: Optional[bool] = Field(description="Does the patient have the symptom of yellowish skin?")
-    dark_urine: Optional[bool] = Field(description="Does the patient have the symptom of dark urine?")
-    nausea: Optional[bool] = Field(description="Does the patient have the symptom of nausea?")
-    loss_of_appetite: Optional[bool] = Field(description="Does the patient have the symptom of loss of appetite?")
-    pain_behind_the_eyes: Optional[bool] = Field(
-        description="Does the patient have the symptom of pain behind the eyes?")
-    back_pain: Optional[bool] = Field(description="Does the patient have the symptom of back pain?")
-    constipation: Optional[bool] = Field(description="Does the patient have the symptom of constipation?")
-    abdominal_pain: Optional[bool] = Field(description="Does the patient have the symptom of abdominal pain?")
-    diarrhoea: Optional[bool] = Field(description="Does the patient have the symptom of diarrhoea?")
-    mild_fever: Optional[bool] = Field(description="Does the patient have the symptom of mild fever?")
-    yellow_urine: Optional[bool] = Field(description="Does the patient have the symptom of yellow urine?")
-    yellowing_of_eyes: Optional[bool] = Field(description="Does the patient have the symptom of yellowing of eyes?")
-    acute_liver_failure: Optional[bool] = Field(description="Does the patient have the symptom of acute liver failure?")
-    fluid_overload: Optional[bool] = Field(description="Does the patient have the symptom of fluid overload?")
-    swelling_of_stomach: Optional[bool] = Field(description="Does the patient have the symptom of swelling of stomach?")
-    swelled_lymph_nodes: Optional[bool] = Field(description="Does the patient have the symptom of swelled lymph nodes?")
-    malaise: Optional[bool] = Field(description="Does the patient have the symptom of malaise?")
-    blurred_and_distorted_vision: Optional[bool] = Field(
-        description="Does the patient have the symptom of blurred and distorted vision?")
-    phlegm: Optional[bool] = Field(description="Does the patient have the symptom of phlegm?")
-    throat_irritation: Optional[bool] = Field(description="Does the patient have the symptom of throat irritation?")
-    redness_of_eyes: Optional[bool] = Field(description="Does the patient have the symptom of redness of eyes?")
-    sinus_pressure: Optional[bool] = Field(description="Does the patient have the symptom of sinus pressure?")
-    runny_nose: Optional[bool] = Field(description="Does the patient have the symptom of runny nose?")
-    congestion: Optional[bool] = Field(description="Does the patient have the symptom of congestion?")
-    chest_pain: Optional[bool] = Field(description="Does the patient have the symptom of chest pain?")
-    weakness_in_limbs: Optional[bool] = Field(description="Does the patient have the symptom of weakness in limbs?")
-    fast_heart_rate: Optional[bool] = Field(description="Does the patient have the symptom of fast heart rate?")
+Please output the extracted information in DICT format. Do not output anything except for the extracted information. 
+Do not add any clarifying information. Do not add any fields that are not in the schema. If the text contains 
+attributes that do not appear in the schema, please ignore them. All output must be in JSON format and follow the 
+schema specified above.
 
 
-class Symptoms3(BaseModel):
-    pain_during_bowel_movements: Optional[bool] = Field(
-        description="Does the patient have the symptom of pain during bowel movements?")
-    pain_in_anal_region: Optional[bool] = Field(description="Does the patient have the")
-    bloody_stool: Optional[bool] = Field(description="Does the patient have the symptom of bloody stool?")
-    irritation_in_anus: Optional[bool] = Field(description="Does the patient have the symptom of irritation in anus?")
-    neck_pain: Optional[bool] = Field(description="Does the patient have the symptom of neck pain?")
-    dizziness: Optional[bool] = Field(description="Does the patient have the symptom of dizziness?")
-    cramps: Optional[bool] = Field(description="Does the patient have the symptom of cramps?")
-    bruising: Optional[bool] = Field(description="Does the patient have the symptom of bruising?")
-    obesity: Optional[bool] = Field(description="Does the patient have the symptom of obesity?")
-    swollen_legs: Optional[bool] = Field(description="Does the patient have the symptom of swollen legs?")
-    swollen_blood_vessels: Optional[bool] = Field(
-        description="Does the patient have the symptom of swollen blood vessels?")
-    puffy_face_and_eyes: Optional[bool] = Field(description="Does the patient have the symptom of puffy face and eyes?")
-    enlarged_thyroid: Optional[bool] = Field(description="Does the patient have the symptom of enlarged thyroid?")
-    brittle_nails: Optional[bool] = Field(description="Does the patient have the symptom of brittle nails?")
-    swollen_extremeties: Optional[bool] = Field(description="Does the patient have the symptom of swollen extremeties?")
-    excessive_hunger: Optional[bool] = Field(description="Does the patient have the symptom of excessive hunger?")
-    extra_marital_contacts: Optional[bool] = Field(
-        description="Does the patient have the symptom of extra marital contacts?")
-    drying_and_tingling_lips: Optional[bool] = Field(
-        description="Does the patient have the symptom of drying and tingling lips?")
-    slurred_speech: Optional[bool] = Field(description="Does the patient have the symptom of slurred speech?")
-    knee_pain: Optional[bool] = Field(description="Does the patient have the symptom of knee pain?")
-    hip_joint_pain: Optional[bool] = Field(description="Does the patient have the symptom of hip joint pain?")
-    muscle_weakness: Optional[bool] = Field(description="Does the patient have the symptom of muscle weakness?")
-    stiff_neck: Optional[bool] = Field(description="Does the patient have the symptom of stiff neck?")
-    swelling_joints: Optional[bool] = Field(description="Does the patient have the symptom of swelling joints?")
-    movement_stiffness: Optional[bool] = Field(description="Does the patient have the symptom of movement stiffness?")
-    spinning_movements: Optional[bool] = Field(description="Does the patient have the symptom of spinning movements?")
-    loss_of_balance: Optional[bool] = Field(description="Does the patient have the symptom of loss of balance?")
-    unsteadiness: Optional[bool] = Field(description="Does the patient have the symptom of unsteadiness?")
-    weakness_of_one_body_side: Optional[bool] = Field(
-        description="Does the patient have the symptom of weakness of one body side?")
-    loss_of_smell: Optional[bool] = Field(description="Does the patient have the symptom of loss of smell?")
-    bladder_discomfort: Optional[bool] = Field(description="Does the patient have the symptom of bladder discomfort?")
-    foul_smell_ofurine: Optional[bool] = Field(description="Does the patient have the symptom of foul smell of urine?")
-    continuous_feel_of_urine: Optional[bool] = Field(
-        description="Does the patient have the symptom of continuous feel of urine?")
-    passage_of_gases: Optional[bool] = Field(description="Does the patient have the symptom of passage of gases?")
-    internal_itching: Optional[bool] = Field(description="Does the patient have the symptom of internal itching?")
-    toxic_look_typhos: Optional[bool] = Field(description="Does the patient have the symptom of toxic look typhos?")
-    depression: Optional[bool] = Field(description="Does the patient have the symptom of depression?")
-    irritability: Optional[bool] = Field(description="Does the patient have the symptom of irritability?")
-    muscle_pain: Optional[bool] = Field(description="Does the patient have the symptom of muscle pain?")
-    altered_sensorium: Optional[bool] = Field(description="Does the patient have the symptom of altered sensorium?")
-    red_spots_over_body: Optional[bool] = Field(description="Does the patient have the symptom of red spots over body?")
-    belly_pain: Optional[bool] = Field(description="Does the patient have the symptom of belly pain?")
-    abnormal_menbooluation: Optional[bool] = Field(
-        description="Does the patient have the symptom of abnormal menbooluation?")
-    dischromic_patches: Optional[bool] = Field(description="Does the patient have the symptom of dischromic patches?")
-    watering_from_eyes: Optional[bool] = Field(description="Does the patient have the symptom of watering from eyes?")
-    increased_appetite: Optional[bool] = Field(description="Does the patient have the symptom of increased appetite?")
-    polyuria: Optional[bool] = Field(description="Does the patient have the symptom of polyuria?")
-    family_history: Optional[bool] = Field(description="Does the patient have the symptom of family history?")
-    mucoid_sputum: Optional[bool] = Field(description="Does the patient have the symptom of mucoid sputum?")
-    rusty_sputum: Optional[bool] = Field(description="Does the patient have the symptom of rusty sputum?")
-    lack_of_concentration: Optional[bool] = Field(
-        description="Does the patient have the symptom of lack of concentration?")
-    visual_disturbances: Optional[bool] = Field(description="Does the patient have the symptom of visual disturbances?")
-    receiving_blood_transfusion: Optional[bool] = Field(
-        description="Does the patient have the symptom of receiving blood transfusion?")
+
+Input: Please extract the patient's different symptoms from this conversation.
+
+ Please confirm the 
+        presence of these symptoms with a Boolean (True or False).
+
+ Do NOT include any additional information. The 
+        output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.
+{conversation}
+Output: 
+"""
+
+SYMPTOMS2 = """
+Your goal is to extract structured information from the user's input that matches the form described 
+below. When extracting information please make sure it matches the type information exactly. Do not add any 
+attributes that do not appear in the schema shown below.
+
+irregular_sugar_level: boolean with value True or False (Does the patient have the symptom of irregular sugar level?)
+cough: boolean with value True or False (Does the patient have the symptom of cough?)
+high_fever: boolean with value True or False (Does the patient have the symptom of high fever?)
+sunken_eyes: boolean with value True or False (Does the patient have the symptom of sunken eyes?)
+breathlessness: boolean with value True or False (Does the patient have the symptom of breathlessness?)
+sweating: boolean with value True or False (Does the patient have the symptom of sweating?)
+dehydration: boolean with value True or False (Does the patient have the symptom of dehydration?)
+indigestion: boolean with value True or False (Does the patient have the symptom of indigestion?)
+headache: boolean with value True or False (Does the patient have the symptom of headache?)
+yellowish_skin: boolean with value True or False (Does the patient have the symptom of yellowish skin?)
+dark_urine: boolean with value True or False (Does the patient have the symptom of dark urine?)
+nausea: boolean with value True or False (Does the patient have the symptom of nausea?)
+loss_of_appetite: boolean with value True or False (Does the patient have the symptom of loss of appetite?)
+pain_behind_the_eyes: boolean with value True or False (Does the patient have the symptom of pain behind the eyes?)
+back_pain: boolean with value True or False (Does the patient have the symptom of back pain?)
+constipation: boolean with value True or False (Does the patient have the symptom of constipation?)
+abdominal_pain: boolean with value True or False (Does the patient have the symptom of abdominal pain?)
+diarrhoea: boolean with value True or False (Does the patient have the symptom of diarrhoea?)
+mild_fever: boolean with value True or False (Does the patient have the symptom of mild fever?)
+yellow_urine: boolean with value True or False (Does the patient have the symptom of yellow urine?)
+yellowing_of_eyes: boolean with value True or False (Does the patient have the symptom of yellowing of eyes?)
+acute_liver_failure: boolean with value True or False (Does the patient have the symptom of acute liver failure?)
+fluid_overload: boolean with value True or False (Does the patient have the symptom of fluid overload?)
+swelling_of_stomach: boolean with value True or False (Does the patient have the symptom of swelling of stomach?)
+swelled_lymph_nodes: boolean with value True or False (Does the patient have the symptom of swelled lymph nodes?)
+malaise: boolean with value True or False (Does the patient have the symptom of malaise?)
+blurred_and_distorted_vision: boolean with value True or False (Does the patient have the symptom of blurred and distorted vision?)
+phlegm: boolean with value True or False (Does the patient have the symptom of phlegm?)
+throat_irritation: boolean with value True or False (Does the patient have the symptom of throat irritation?)
+redness_of_eyes: boolean with value True or False (Does the patient have the symptom of redness of eyes?)
+sinus_pressure: boolean with value True or False (Does the patient have the symptom of sinus pressure?)
+runny_nose: boolean with value True or False (Does the patient have the symptom of runny nose?)
+congestion: boolean with value True or False (Does the patient have the symptom of congestion?)
+chest_pain: boolean with value True or False (Does the patient have the symptom of chest pain?)
+weakness_in_limbs: boolean with value True or False (Does the patient have the symptom of weakness in limbs?)
+fast_heart_rate: boolean with value True or False (Does the patient have the symptom of fast heart rate?)
+
+Please output the extracted information in DICT format. Do not output anything except for the extracted information. 
+Do not add any clarifying information. Do not add any fields that are not in the schema. If the text contains 
+attributes that do not appear in the schema, please ignore them. All output must be in JSON format and follow the 
+schema specified above.
 
 
-class Symptoms4(BaseModel):
-    coma: Optional[bool] = Field(description="Does the patient have the symptom of coma?")
-    stomach_bleeding: Optional[bool] = Field(description="Does the patient have the symptom of stomach bleeding?")
-    distention_of_abdomen: Optional[bool] = Field(
-        description="Does the patient have the symptom of distention of abdomen?")
-    history_of_alcohol_consumption: Optional[bool] = Field(
-        description="Does the patient have the symptom of history of alcohol consumption?")
-    receiving_unsterile_injections: Optional[bool] = Field(
-        description="Does the patient have the symptom of receiving unsterile injections?")
-    blood_in_sputum: Optional[bool] = Field(description="Does the patient have the symptom of blood in sputum?")
-    prominent_veins_on_calf: Optional[bool] = Field(
-        description="Does the patient have the symptom of prominent veins on calf?")
-    palpitations: Optional[bool] = Field(description="Does the patient have the symptom of palpitations?")
-    painful_walking: Optional[bool] = Field(description="Does the patient have the symptom of painful walking?")
-    pus_filled_pimples: Optional[bool] = Field(description="Does the patient have the symptom of pus filled pimples?")
-    blackheads: Optional[bool] = Field(description="Does the patient have the symptom of blackheads?")
-    scurring: Optional[bool] = Field(description="Does the patient have the symptom of scurring?")
-    red_sore_around_nose: Optional[bool] = Field(
-        description="Does the patient have the symptom of red sore around nose?")
-    skin_peeling: Optional[bool] = Field(description="Does the patient have the symptom of skin peeling?")
-    silver_like_dusting: Optional[bool] = Field(description="Does the patient have the symptom of silver like dusting?")
-    small_dents_in_nails: Optional[bool] = Field(
-        description="Does the patient have the symptom of small dents in nails?")
-    inflammatory_nails: Optional[bool] = Field(description="Does the patient have the symptom of inflammatory nails?")
-    blister: Optional[bool] = Field(description="Does the patient have the symptom of blister?")
-    yellow_crust_ooze: Optional[bool] = Field(description="Does the patient have the symptom of yellow crust ooze?")
-    prognosis: Optional[bool] = Field(description="Does the patient have the symptom of prognosis?")
+
+Input: Please extract the patient's different symptoms from this conversation.
+
+ Please confirm the 
+        presence of these symptoms with a Boolean (True or False).
+
+ Do NOT include any additional information. The 
+        output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.
+{conversation}
+Output: 
+"""
+
+SYMPTOMS3 = """
+Your goal is to extract structured information from the user's input that matches the form described 
+below. When extracting information please make sure it matches the type information exactly. Do not add any 
+attributes that do not appear in the schema shown below.
+
+pain_during_bowel_movements: boolean with value True or False (Does the patient have the symptom of 
+pain during bowel movements?)
+pain_in_anal_region: boolean with value True or False (Does the patient have the symptom of pain in anal region?)
+bloody_stool: boolean with value True or False (Does the patient have the symptom of bloody stool?)
+irritation_in_anus: boolean with value True or False (Does the patient have the symptom of irritation in anus?)
+neck_pain: boolean with value True or False (Does the patient have the symptom of neck pain?)
+dizziness: boolean with value True or False (Does the patient have the symptom of dizziness?)
+cramps: boolean with value True or False (Does the patient have the symptom of cramps?)
+bruising: boolean with value True or False (Does the patient have the symptom of bruising?)
+obesity: boolean with value True or False (Does the patient have the symptom of obesity?)
+swollen_legs: boolean with value True or False (Does the patient have the symptom of swollen legs?)
+swollen_blood_vessels: boolean with value True or False (Does the patient have the symptom of swollen blood vessels?)
+puffy_face_and_eyes: boolean with value True or False (Does the patient have the symptom of puffy face and eyes?)
+enlarged_thyroid: boolean with value True or False (Does the patient have the symptom of enlarged thyroid?)
+brittle_nails: boolean with value True or False (Does the patient have the symptom of brittle nails?)
+swollen_extremeties: boolean with value True or False (Does the patient have the symptom of swollen extremeties?)
+excessive_hunger: boolean with value True or False (Does the patient have the symptom of excessive hunger?)
+extra_marital_contacts: boolean with value True or False (Does the patient have the symptom of extra marital contacts?)
+drying_and_tingling_lips: boolean with value True or False (Does the patient have the symptom of drying and tingling lips?)
+slurred_speech: boolean with value True or False (Does the patient have the symptom of slurred speech?)
+knee_pain: boolean with value True or False (Does the patient have the symptom of knee pain?)
+hip_joint_pain: boolean with value True or False (Does the patient have the symptom of hip joint pain?)
+muscle_weakness: boolean with value True or False (Does the patient have the symptom of muscle weakness?)
+stiff_neck: boolean with value True or False (Does the patient have the symptom of stiff neck?)
+swelling_joints: boolean with value True or False (Does the patient have the symptom of swelling joints?)
+movement_stiffness: boolean with value True or False (Does the patient have the symptom of movement stiffness?)
+spinning_movements: boolean with value True or False (Does the patient have the symptom of spinning movements?)
+loss_of_balance: boolean with value True or False (Does the patient have the symptom of loss of balance?)
+unsteadiness: boolean with value True or False (Does the patient have the symptom of unsteadiness?)
+weakness_of_one_body_side: boolean with value True or False (Does the patient have the symptom of weakness of one body side?)
+loss_of_smell: boolean with value True or False (Does the patient have the symptom of loss of smell?)
+bladder_discomfort: boolean with value True or False (Does the patient have the symptom of bladder discomfort?)
+foul_smell_ofurine: boolean with value True or False (Does the patient have the symptom of foul smell of urine?)
+continuous_feel_of_urine: boolean with value True or False (Does the patient have the symptom of continuous feel of urine?)
+passage_of_gases: boolean with value True or False (Does the patient have the symptom of passage of gases?)
+internal_itching: boolean with value True or False (Does the patient have the symptom of internal itching?)
+toxic_look_typhos: boolean with value True or False (Does the patient have the symptom of toxic look typhos?)
+depression: boolean with value True or False (Does the patient have the symptom of depression?)
+irritability: boolean with value True or False (Does the patient have the symptom of irritability?)
+muscle_pain: boolean with value True or False (Does the patient have the symptom of muscle pain?)
+altered_sensorium: boolean with value True or False (Does the patient have the symptom of altered sensorium?)
+red_spots_over_body: boolean with value True or False (Does the patient have the symptom of red spots over body?)
+belly_pain: boolean with value True or False (Does the patient have the symptom of belly pain?)
+abnormal_menbooluation: boolean with value True or False (Does the patient have the symptom of abnormal menbooluation?)
+dischromic_patches: boolean with value True or False (Does the patient have the symptom of dischromic patches?)
+watering_from_eyes: boolean with value True or False (Does the patient have the symptom of watering from eyes?)
+increased_appetite: boolean with value True or False (Does the patient have the symptom of increased appetite?)
+polyuria: boolean with value True or False (Does the patient have the symptom of polyuria?)
+family_history: boolean with value True or False (Does the patient have the symptom of family history?)
+mucoid_sputum: boolean with value True or False (Does the patient have the symptom of mucoid sputum?)
+rusty_sputum: boolean with value True or False (Does the patient have the symptom of rusty sputum?)
+lack_of_concentration: boolean with value True or False (Does the patient have the symptom of lack of concentration?)
+visual_disturbances: boolean with value True or False (Does the patient have the symptom of visual disturbances?)
+receiving_blood_transfusion: boolean with value True or False (Does the patient have the symptom of receiving blood transfusion?
+
+Please output the extracted information in DICT format. Do not output anything except for the extracted information. 
+Do not add any clarifying information. Do not add any fields that are not in the schema. If the text contains 
+attributes that do not appear in the schema, please ignore them. All output must be in JSON format and follow the 
+schema specified above.
 
 
-# open the template file
-with open("Data/extraction_prompt.txt", "r") as f:
-    QUERY = f.read()
+
+Input: Please extract the patient's different symptoms from this conversation.
+
+ Please confirm the 
+        presence of these symptoms with a Boolean (True or False).
+
+ Do NOT include any additional information. The 
+        output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.
+{conversation}
+Output: 
+"""
+
+SYMPTOMS4 = """
+Your goal is to extract structured information from the user's input that matches the form described 
+below. When extracting information please make sure it matches the type information exactly. Do not add any 
+attributes that do not appear in the schema shown below.
+
+coma: boolean with value True or False (Does the patient have the symptom of coma?)
+stomach_bleeding: boolean with value True or False (Does the patient have the symptom of stomach bleeding?)
+distention_of_abdomen: boolean with value True or False (Does the patient have the symptom of distention of abdomen?)
+history_of_alcohol_consumption: boolean with value True or False (Does the patient have the symptom of history of alcohol consumption?)
+receiving_unsterile_injections: boolean with value True or False (Does the patient have the symptom of receiving unsterile injections?)
+blood_in_sputum: boolean with value True or False (Does the patient have the symptom of blood in sputum?)
+prominent_veins_on_calf: boolean with value True or False (Does the patient have the symptom of prominent veins on calf?)
+palpitations: boolean with value True or False (Does the patient have the symptom of palpitations?)
+painful_walking: boolean with value True or False (Does the patient have the symptom of painful walking?)
+pus_filled_pimples: boolean with value True or False (Does the patient have the symptom of pus filled pimples?)
+blackheads: boolean with value True or False (Does the patient have the symptom of blackheads?)
+scurring: boolean with value True or False (Does the patient have the symptom of scurring?)
+red_sore_around_nose: boolean with value True or False (Does the patient have the symptom of red sore around nose?)
+skin_peeling: boolean with value True or False (Does the patient have the symptom of skin peeling?)
+silver_like_dusting: boolean with value True or False (Does the patient have the symptom of silver like dusting?)
+small_dents_in_nails: boolean with value True or False (Does the patient have the symptom of small dents in nails?)
+inflammatory_nails: boolean with value True or False (Does the patient have the symptom of inflammatory nails?)
+blister: boolean with value True or False (Does the patient have the symptom of blister?)
+yellow_crust_ooze: boolean with value True or False (Does the patient have the symptom of yellow crust ooze?)
+prognosis: boolean with value True or False (Does the patient have the symptom of prognosis?)
+
+Please output the extracted information in DICT format. Do not output anything except for the extracted information. 
+Do not add any clarifying information. Do not add any fields that are not in the schema. If the text contains 
+attributes that do not appear in the schema, please ignore them. All output must be in JSON format and follow the 
+schema specified above.
 
 
-def main(conversation: str):
+
+Input: Please extract the patient's different symptoms from this conversation.
+
+ Please confirm the 
+        presence of these symptoms with a Boolean (True or False).
+
+ Do NOT include any additional information. The 
+        output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.
+{conversation}
+Output: 
+"""
+
+
+def main(conversation: str) -> dict:
+    """
+    The main function is responsible for running a chain of processes to extract symptoms from a given chat history.
+    :param conversation: The chat history to extract symptoms from.
+    :return: The extracted symptoms.
+    """
+    # Load LLM
     llm = llm_loader()
-    symptoms_extraction = {}
-    # iterate on Symptoms classes
-    for symptoms in [(Symptoms1, "symptoms1"), (Symptoms2, "symptoms2"), (Symptoms3, "symptoms3"),
-                     (Symptoms4, "symptoms4")]:
-        schema, validator = from_pydantic(symptoms[0])
-        # Extraction
-        chain = create_extraction_chain(
-            llm, schema, encoder_or_encoder_class="json", validator=validator
+    extraction = {}  # The extraction dictionary
+    # Loop through the symptoms
+    for symptom in [SYMPTOMS1, SYMPTOMS2, SYMPTOMS3, SYMPTOMS4]:
+        # Prompt template for messages
+        prompt = PromptTemplate.from_template(template=symptom)
+        # Conversation loader
+        conversation_load = Document(page_content=conversation)
+        # Define LLM chain
+        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        # Define StuffDocumentsChain
+        stuff_chain = StuffDocumentsChain(
+            llm_chain=llm_chain, document_variable_name="conversation", verbose=True
         )
-        query = f"""Please extract the patient's different syntone from this conversation.\n\n Please confirm the 
-        presence of these symptoms with a Boolean (True or False).\n\n Do NOT include any additional information. The 
-        output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.\n\n
-         {conversation}"""
-        extraction = chain.run(query)["raw"]
-        extraction = json.loads(extraction)
-        print(type(extraction))
-        symptoms_extraction.update(extraction)
-        return symptoms_extraction
+        # Run the chain and replace the underscore with a space
+        partial_extracted = stuff_chain.run([conversation_load]).replace("\_", "_")
+        # Convert the string to a dictionary
+        partial_extracted = ast.literal_eval(partial_extracted)
+        # Update the extraction dictionary
+        extraction.update(partial_extracted)
+    # Return the extraction dictionary
+    return extraction
