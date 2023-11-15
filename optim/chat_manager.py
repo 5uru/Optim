@@ -60,5 +60,5 @@ def main(chat_history: str) -> str:
     # Run the chain
     output = stuff_chain.run([conversation_load])
     # clean output
-    output = output.split('Patient:')[0]
+    output = output.split("Patient:")[0]
     return output
