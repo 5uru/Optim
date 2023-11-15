@@ -3,7 +3,7 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts import PromptTemplate
 
-from llm_loader import main as llm_loader
+from optim.llm_loader import main as llm_loader
 
 # LLM prompt template for summarization
 SUMMARY_PROMPT = """ Can you write a concise and comprehensive summary of {conversation}?"""

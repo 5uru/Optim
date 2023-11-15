@@ -6,14 +6,32 @@ from optim.summarize import main as summarize
 
 
 def update_chat(patient: str):
+    """
+    Updates the chat conversation for a given patient.
+
+    Opens the patient data file and loads the conversation. Checks if the conversation dictionary contains the keys
+    "summary", "score", and "symptoms". If any of these keys are missing, performs the corresponding calculations or
+    extraction and updates the conversation dictionary accordingly. Finally, saves the updated conversation back to the
+    patient data file.
+
+    :param:
+        patient (str): The path to the patient data file.
+
+    :return:
+        dict: The updated conversation dictionary.
+    """
     # Open the patient data
     with open(patient, "r") as f:
         conversation = json.load(f)
     # Check if the summary, score and symptoms keys are in the conversation dictionary
     if "summary" not in conversation:
-        conversation["summary"] = summarize(conversation["messages"])
+        conversation["summary"] = summarize(conversation["messages"])  # Summarize the conversation
     elif "symptoms" not in conversation:
-        conversation["symptoms"] = extract(conversation["summary"])
+        conversation["symptoms"] = extract(conversation["summary"])  # Extract symptoms from the conversation
+    elif "score" not in conversation:
+        conversation["score"] = score(conversation["symptoms"])["score"]  # Calculate the score of the conversation
+        conversation["symptoms_alerte"] = score(conversation["symptoms"])["symptoms_alerte"]  # Calculate the
+        # symptoms_alerte of the conversation
 
     # Save the conversation in the json file
     with open(patient, "w") as f:
@@ -21,7 +39,55 @@ def update_chat(patient: str):
     return conversation
 
 
+def score(symptoms: dict) -> dict:
+    """
+    Calculates the score and symptoms alert for a given set of symptoms.
+
+    Opens the "score.json" file and loads the scores. Iterates through the symptoms and their corresponding values,
+    calculating the total score based on the scores' dictionary. Determines if any symptom has a score greater than
+    4, setting the symptoms_alerte flag accordingly. Returns a dictionary containing the calculated score and
+    symptoms_alerte.
+
+    :param:
+        symptoms (dict): A dictionary of symptoms and their values.
+
+    :return:
+        dict: A dictionary containing the calculated score and symptoms_alerte.
+    """
+
+    # Open the score.json file
+    with open("./score.json", "r") as f:
+        scores = json.load(f)
+    scores_total = 0  # The total score
+    symptoms_alerte = False  # if the score of a symptom is greater than 4 then symptoms_alerte is True
+    # Loop through the symptoms and their values
+    for symptom, value in symptoms.items():
+        # Check if the symptom is in the score dictionary
+        if value:
+            # Add the score to the total score
+            scores_total += scores[symptom]
+            # Check if the score is greater than 4
+            if scores[symptom] > 4:
+                symptoms_alerte = True
+    # Return the score and symptoms_alerte
+    return {
+        "score": scores_total,
+        "symptoms_alerte": symptoms_alerte}
+
+
 def main():
+    """
+    Runs the main evaluation process.
+
+    Retrieves all JSON files in the "conversations" directory and extracts the patient names. Opens the "data.json" file
+    and loads the data. Checks if each patient in the patient list is already present in the data. If not, evaluates the
+    corresponding conversation using the "update_chat" function and adds it to the data dictionary. Finally, saves the
+    updated data dictionary back to the "data.json" file and returns it.
+
+    :return:
+        dict: The updated data dictionary.
+    """
+
     # get all the json files in the conversations directory
     json_files = glob.glob('./conversations/*.json')
     # delete ".json" and "conversations/" from the file name

@@ -1,4 +1,1 @@
-{
-  "patient_list": [],
-  "patients": {}
-}
+{"patient_list": [], "patients": {"1": {"messages": " \n\n\nAgent: Hello\n\n\nPatient: Hello\n\n\nAgent: \nAgent: Thank you for contacting the hospital emergency room. Can you please describe your symptoms?\n\n\nPatient: i have fever\n\n\nAgent: Thank you for contacting the hospital emergency room. Can you please describe your symptoms in more detail?\n\n\nPatient: i have headaches \n\n\nAgent: \nThank you for contacting the hospital emergency room. Can you please describe your symptoms in more detail?\n\n\nPatient: It is finish", "date": "2023-11-15 18:38:52", "summary": "The patient contacts the hospital emergency room and reports having a fever and headache. The agent asks for more details about the patient's symptoms to better assess their condition and provide appropriate care."}}}

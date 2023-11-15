@@ -234,10 +234,20 @@ Output:
 
 def main(conversation: str) -> dict:
     """
-    The main function is responsible for running a chain of processes to extract symptoms from a given chat history.
-    :param conversation: The chat history to extract symptoms from.
-    :return: The extracted symptoms.
+    Runs the main extraction process for a given conversation.
+
+    Loads the LLM model. Iterates through different sets of symptoms templates and prompts. Loads the conversation as a
+    document. Defines an LLMChain and a StuffDocumentsChain to process the conversation and extract information. Runs the
+    extraction chain and converts the extracted string to a dictionary. Updates the extraction dictionary with the partial
+    extraction results from each set of symptoms. Returns the final extraction dictionary.
+
+    :param:
+        conversation (str): The conversation to extract information from.
+
+    :return:
+        dict: The extracted information dictionary.
     """
+
     # Load LLM
     llm = llm_loader()
     extraction = {}  # The extraction dictionary
@@ -258,6 +268,6 @@ def main(conversation: str) -> dict:
         # Convert the string to a dictionary
         partial_extracted = ast.literal_eval(partial_extracted)
         # Update the extraction dictionary
-        extraction.update(partial_extracted)
+        extraction |= partial_extracted
     # Return the extraction dictionary
     return extraction
