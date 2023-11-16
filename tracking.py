@@ -16,10 +16,9 @@ st.set_page_config(page_title=" Optim Tracking", layout="wide")
 @st.cache_data
 def get_data():
     # Update data.json
-    evaluate()
-    # Open data.json
-    with open('data.json') as f:
-        data = json.load(f)
+    data = evaluate()
+    print(data)
+
     #  Get patient number and critic patient numbers
     patient_number = len(data['patient_list'])
     critic_number = sum(bool(value["symptoms_alerte"])

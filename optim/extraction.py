@@ -264,7 +264,7 @@ def main(conversation: str) -> dict:
             llm_chain=llm_chain, document_variable_name="conversation", verbose=True
         )
         # Run the chain and replace the underscore with a space
-        partial_extracted = stuff_chain.run([conversation_load]).replace("\_", "_")
+        partial_extracted = stuff_chain.run([conversation_load]).replace("\_", "_").replace("```", "").replace("json", "")
         # Convert the string to a dictionary
         partial_extracted = ast.literal_eval(partial_extracted)
         # Update the extraction dictionary

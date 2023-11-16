@@ -23,16 +23,13 @@ def update_chat(patient: str):
     # Open the patient data
     with open(patient, "r") as f:
         conversation = json.load(f)
-    # Check if the summary, score and symptoms keys are in the conversation dictionary
-    if "summary" not in conversation:
-        conversation["summary"] = summarize(conversation["messages"])  # Summarize the conversation
-    elif "symptoms" not in conversation:
-        conversation["symptoms"] = extract(conversation["summary"])  # Extract symptoms from the conversation
-    elif "score" not in conversation:
-        conversation["score"] = score(conversation["symptoms"])["score"]  # Calculate the score of the conversation
-        conversation["symptoms_alerte"] = score(conversation["symptoms"])["symptoms_alerte"]  # Calculate the
-        # symptoms_alerte of the conversation
-
+    conversation["summary"] = summarize(conversation["messages"])  # Summarize the conversation
+    conversation["symptoms"] = extract(conversation["summary"])  # Extract symptoms from the conversation
+    patient_score = score(conversation["symptoms"]) # Calculate the score and symptoms_alerte
+    conversation["score"] = patient_score["score"]  # Calculate the score of the conversation
+    conversation["symptoms_alerte"] = patient_score["symptoms_alerte"]  # Calculate the
+    # symptoms_alerte of the conversation
+    print(conversation)
     # Save the conversation in the json file
     with open(patient, "w") as f:
         json.dump(conversation, f)
@@ -64,11 +61,14 @@ def score(symptoms: dict) -> dict:
     for symptom, value in symptoms.items():
         # Check if the symptom is in the score dictionary
         if value:
-            # Add the score to the total score
-            scores_total += scores[symptom]
-            # Check if the score is greater than 4
-            if scores[symptom] > 4:
-                symptoms_alerte = True
+            try:
+                # Add the score to the total score
+                scores_total += scores[symptom]
+                # Check if the score is greater than 4
+                if scores[symptom] > 4:
+                    symptoms_alerte = True
+            except KeyError:  # If the symptom is not in the score dictionary
+                print(f"Symptom {symptom} not found in score.json")
     # Return the score and symptoms_alerte
     return {
         "score": scores_total,
@@ -97,11 +97,13 @@ def main():
         data = json.load(f)
     # check if the patient list in patient_list is not in the data patient list
     for patient in patient_list:
-        if patient not in data["patients"]:
+        if patient not in data["patient_list"]:
             # evaluate the conversation
             conversation = update_chat(f"./conversations/{patient}.json")
             # add the conversation to the data dictionary
             data["patients"][patient] = conversation
+            # add the patient to the patient list
+            data["patient_list"].append(patient)
     # save the data dictionary in the json file
     with open("./data.json", "w") as f:
         json.dump(data, f)
