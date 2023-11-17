@@ -26,9 +26,10 @@ def get_data():
     # Update data.json
     data_ = evaluate()
     #  Get patient number and critic patient numbers
-    patient_number = len(data_['patient_list'])
-    critic_number = sum(bool(value["symptoms_alerte"])
-                        for symptom, value in data_["patients"].items())
+    patient_number = len(data_["patient_list"])
+    critic_number = sum(
+        bool(value["symptoms_alerte"]) for symptom, value in data_["patients"].items()
+    )
     return patient_number, critic_number, data_["patients"]
 
 
@@ -67,8 +68,8 @@ def card(patient_: str, score: str, time_: int, summary: str, conversation: json
     :return: None
     """
     with stylable_container(
-            key="container_with_border",
-            css_styles="""
+        key="container_with_border",
+        css_styles="""
                     {
                         border: 1px solid rgba(49, 51, 63, 0.2);
                         border-radius: 0.5rem;
@@ -89,14 +90,27 @@ def card(patient_: str, score: str, time_: int, summary: str, conversation: json
             st.rerun()
 
 
-with st.spinner('Wait for it...'):
+with st.spinner("Wait for it..."):
     col1, col2 = st.columns(2)
-    theme_bad = {'bgcolor': '#FFF0F0', 'title_color': 'red', 'content_color': 'red', 'icon_color': 'red',
-                 'icon': 'fa fa-times-circle'}
+    theme_bad = {
+        "bgcolor": "#FFF0F0",
+        "title_color": "red",
+        "content_color": "red",
+        "icon_color": "red",
+        "icon": "fa fa-times-circle",
+    }
     with col1:
-        hc.info_card(title='Patient Number', content=f"{patient_number_total}", sentiment='good', )
+        hc.info_card(
+            title="Patient Number",
+            content=f"{patient_number_total}",
+            sentiment="good",
+        )
     with col2:
-        hc.info_card(title='Critic Patient Number', content=f"{critic_patient_number}", theme_override=theme_bad)
+        hc.info_card(
+            title="Critic Patient Number",
+            content=f"{critic_patient_number}",
+            theme_override=theme_bad,
+        )
     add_vertical_space(1)
     _, col = st.columns([8, 1])
     with col:
@@ -105,13 +119,25 @@ with st.spinner('Wait for it...'):
     icon_row = row(3)  # number of rows
     if on:
         # Sort by patient by score
-        patients_data = sorted(patients_data.items(), key=lambda x: x[1]["score"], reverse=True)
+        patients_data = sorted(
+            patients_data.items(), key=lambda x: x[1]["score"], reverse=True
+        )
     else:
         # Sort by patient by time
-        patients_data = sorted(patients_data.items(), key=lambda x: x[1]["date"], reverse=False)
+        patients_data = sorted(
+            patients_data.items(), key=lambda x: x[1]["date"], reverse=False
+        )
     for patient, data in patients_data:
         # calculate time
-        time = (datetime.now() - datetime.strptime(data["date"], "%Y-%m-%d %H:%M:%S")).total_seconds()
+        time = (
+            datetime.now() - datetime.strptime(data["date"], "%Y-%m-%d %H:%M:%S")
+        ).total_seconds()
         time = round(time / 60)  # round to minutes
         with icon_row.container():
-            card(patient, data["score"], time, data["summary"], json.dumps(data, indent=4))
+            card(
+                patient,
+                data["score"],
+                time,
+                data["summary"],
+                json.dumps(data, indent=4),
+            )
