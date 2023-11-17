@@ -11,6 +11,8 @@ from optim.evaluate import main as evaluate
 
 import json
 
+import os
+
 st.set_page_config(page_title=" Optim Tracking", layout="wide")
 
 
@@ -31,6 +33,27 @@ def get_data():
 
 
 patient_number_total, critic_patient_number, patients_data = get_data()
+
+
+def delete_patient(patient_number: str):
+    """
+    Deletes a patient from the data.json file.
+    :param patient_number: (str) The patient number to delete.
+    :return: None
+    """
+    with open("data.json", "r") as f:
+        data_news = json.load(f)
+    data_news["patient_list"].remove(patient_number)
+    data_news["patients"].pop(patient_number)
+    with open("data.json", "w") as f:
+        json.dump(data_news, f, indent=4)
+    # delete the patient's data from f"conversations/{patient_number}.json"
+    try:
+        os.remove(f"conversations/{patient_number}.json")
+        st.success("Patient deleted successfully")
+    except FileNotFoundError:
+        st.error("Patient not found")
+    return None
 
 
 def card(patient_: str, score: str, time_: int, summary: str, conversation: json):
@@ -61,6 +84,9 @@ def card(patient_: str, score: str, time_: int, summary: str, conversation: json
         st.markdown(summary)
         with st.expander("Details"):
             st.json(conversation)
+        if st.button("Delete", key=patient_):
+            delete_patient(patient_)
+            st.rerun()
 
 
 with st.spinner('Wait for it...'):
