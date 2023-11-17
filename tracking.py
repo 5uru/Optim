@@ -1,4 +1,5 @@
 # Import necessary  libraries
+from datetime import datetime
 
 import hydralit_components as hc
 import streamlit as st
@@ -15,21 +16,33 @@ st.set_page_config(page_title=" Optim Tracking", layout="wide")
 
 @st.cache_data
 def get_data():
+    """
+    Gets the data by evaluating and updating the data.json file. Returns the patient number, critic patient number,
+    and the patient data.
+    :return:  Tuple[int, int, dict]: A tuple containing the patient number, critic patient number, and the patient data.
+    """
     # Update data.json
-    data = evaluate()
-    print(data)
-
+    data_ = evaluate()
     #  Get patient number and critic patient numbers
-    patient_number = len(data['patient_list'])
+    patient_number = len(data_['patient_list'])
     critic_number = sum(bool(value["symptoms_alerte"])
-                        for symptom, value in data["patients"].items())
-    return patient_number, critic_number
+                        for symptom, value in data_["patients"].items())
+    return patient_number, critic_number, data_["patients"]
 
 
-patient_number_total, critic_patient_number = get_data()
+patient_number_total, critic_patient_number, patients_data = get_data()
 
 
-def card():
+def card(patient_: str, score: str, time_: int, summary: str, conversation: json):
+    """
+    Creates a card for displaying patient information, score, time, summary, and conversation details.
+    :param patient_: (str) The patient number.
+    :param score: (str) The score value.
+    :param time_: (int) The time value.
+    :param summary: (str) The summary of the conversation.
+    :param conversation: (json) The conversation details.
+    :return: None
+    """
     with stylable_container(
             key="container_with_border",
             css_styles="""
@@ -41,15 +54,13 @@ def card():
                     """,
     ):
         col_score, col_time = st.columns(2)
-        col_score.metric(label=":red[Score]", value=5000)
-        col_time.metric(label=":red[Time]", value=5000)
-        st.text("Patient Number: 1")
+        col_score.metric(label=":red[Score]", value=score)
+        col_time.metric(label=":red[Time]", value=time_)
+        st.text(f"Patient Number: {patient_}")
         st.text("Summary:")
-        st.markdown(
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nibh ac nisl aliquam lacinia.")
+        st.markdown(summary)
         with st.expander("Details"):
-            st.markdown(
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nibh ac nisl aliquam lacinia.")
+            st.json(conversation)
 
 
 with st.spinner('Wait for it...'):
@@ -57,19 +68,24 @@ with st.spinner('Wait for it...'):
     theme_bad = {'bgcolor': '#FFF0F0', 'title_color': 'red', 'content_color': 'red', 'icon_color': 'red',
                  'icon': 'fa fa-times-circle'}
     with col1:
-        hc.info_card(title='Patient Number', content='1200', sentiment='good', )
+        hc.info_card(title='Patient Number', content=f"{patient_number_total}", sentiment='good', )
     with col2:
-        hc.info_card(title='Critic Patient Number', content='30', theme_override=theme_bad)
+        hc.info_card(title='Critic Patient Number', content=f"{critic_patient_number}", theme_override=theme_bad)
     add_vertical_space(1)
     _, col = st.columns([8, 1])
     with col:
-        on = st.toggle('Activate feature')
+        on = st.toggle("Sort by Score", True)
     add_vertical_space(1)
     icon_row = row(3)  # number of rows
     if on:
-
-        with icon_row.container():
-            card()
+        # Sort by patient by score
+        patients_data = sorted(patients_data.items(), key=lambda x: x[1]["score"], reverse=True)
     else:
+        # Sort by patient by time
+        patients_data = sorted(patients_data.items(), key=lambda x: x[1]["date"], reverse=False)
+    for patient, data in patients_data:
+        # calculate time
+        time = (datetime.now() - datetime.strptime(data["date"], "%Y-%m-%d %H:%M:%S")).total_seconds()
+        time = round(time / 60)  # round to minutes
         with icon_row.container():
-            card()
+            card(patient, data["score"], time, data["summary"], json.dumps(data, indent=4))
