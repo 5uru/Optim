@@ -264,7 +264,9 @@ def main(conversation: str) -> dict:
             llm_chain=llm_chain, document_variable_name="conversation", verbose=True
         )
         # Run the chain and replace the underscore with a space
-        partial_extracted = stuff_chain.run([conversation_load]).replace("\_", "_").replace("```", "")
+        partial_extracted = (
+            stuff_chain.run([conversation_load]).replace("\_", "_").replace("```", "")
+        )
         partial_extracted = partial_extracted.replace("json", "").replace("\n", "")
         # Check if partial_extracted starts with { and ends with }
         if not partial_extracted.startswith("{"):
