@@ -1,6 +1,11 @@
+#llm:
+  #name: "ollama"
+  #model_name: "mistral:7b-instruct"
+
 llm:
-  name: "ollama"
-  model_name: "mistral:7b-instruct"
+  name: "openai"
+  openai_api_key: ${oc.env:OPENAI_API_KEY}
+  openai_organization_id: ${oc.env:OPENAI_ORG}
 
 embeddings:
   model_name: "sentence-transformers/all-mpnet-base-v2"
