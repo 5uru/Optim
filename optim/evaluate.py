@@ -23,10 +23,18 @@ def update_chat(patient: str):
     # Open the patient data
     with open(patient, "r") as f:
         conversation = json.load(f)
-    conversation["summary"] = summarize(conversation["messages"])  # Summarize the conversation
-    conversation["symptoms"] = extract(conversation["summary"])  # Extract symptoms from the conversation
-    patient_score = score(conversation["symptoms"]) # Calculate the score and symptoms_alerte
-    conversation["score"] = patient_score["score"]  # Calculate the score of the conversation
+    conversation["summary"] = summarize(
+        conversation["messages"]
+    )  # Summarize the conversation
+    conversation["symptoms"] = extract(
+        conversation["summary"]
+    )  # Extract symptoms from the conversation
+    patient_score = score(
+        conversation["symptoms"]
+    )  # Calculate the score and symptoms_alerte
+    conversation["score"] = patient_score[
+        "score"
+    ]  # Calculate the score of the conversation
     conversation["symptoms_alerte"] = patient_score["symptoms_alerte"]  # Calculate the
     # symptoms_alerte of the conversation
     # Save the conversation in the json file
@@ -55,7 +63,9 @@ def score(symptoms: dict) -> dict:
     with open("./score.json", "r") as f:
         scores = json.load(f)
     scores_total = 0  # The total score
-    symptoms_alerte = False  # if the score of a symptom is greater than 5 then symptoms_alerte is True
+    symptoms_alerte = (
+        False
+    )  # if the score of a symptom is greater than 5 then symptoms_alerte is True
     # Loop through the symptoms and their values
     for symptom, value in symptoms.items():
         # Check if the symptom is in the score dictionary
@@ -69,9 +79,7 @@ def score(symptoms: dict) -> dict:
             except KeyError:  # If the symptom is not in the score dictionary
                 print(f"Symptom {symptom} not found in score.json")
     # Return the score and symptoms_alerte
-    return {
-        "score": scores_total,
-        "symptoms_alerte": symptoms_alerte}
+    return {"score": scores_total, "symptoms_alerte": symptoms_alerte}
 
 
 def main():
@@ -88,9 +96,11 @@ def main():
     """
 
     # get all the json files in the conversations directory
-    json_files = glob.glob('./conversations/*.json')
+    json_files = glob.glob("./conversations/*.json")
     # delete ".json" and "conversations/" from the file name
-    patient_list = [file.replace(".json", "").replace("./conversations/", "") for file in json_files]
+    patient_list = [
+        file.replace(".json", "").replace("./conversations/", "") for file in json_files
+    ]
     # open "data.json" for reading
     with open("./data.json", "r") as f:
         data = json.load(f)
