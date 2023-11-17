@@ -29,7 +29,6 @@ def update_chat(patient: str):
     conversation["score"] = patient_score["score"]  # Calculate the score of the conversation
     conversation["symptoms_alerte"] = patient_score["symptoms_alerte"]  # Calculate the
     # symptoms_alerte of the conversation
-    print(conversation)
     # Save the conversation in the json file
     with open(patient, "w") as f:
         json.dump(conversation, f)
@@ -56,7 +55,7 @@ def score(symptoms: dict) -> dict:
     with open("./score.json", "r") as f:
         scores = json.load(f)
     scores_total = 0  # The total score
-    symptoms_alerte = False  # if the score of a symptom is greater than 4 then symptoms_alerte is True
+    symptoms_alerte = False  # if the score of a symptom is greater than 5 then symptoms_alerte is True
     # Loop through the symptoms and their values
     for symptom, value in symptoms.items():
         # Check if the symptom is in the score dictionary
@@ -64,8 +63,8 @@ def score(symptoms: dict) -> dict:
             try:
                 # Add the score to the total score
                 scores_total += scores[symptom]
-                # Check if the score is greater than 4
-                if scores[symptom] > 4:
+                # Check if the score is greater than 5
+                if scores[symptom] > 5:
                     symptoms_alerte = True
             except KeyError:  # If the symptom is not in the score dictionary
                 print(f"Symptom {symptom} not found in score.json")
