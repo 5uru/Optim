@@ -1,4 +1,0 @@
-Please extract the patient's different syntone from this conversation.\n\n Please confirm the
-    presence of these symptoms with a Boolean (True or False).\n\n Do NOT include any additional information. The
-    output MUST follow the above scheme. Do NOT add any additional columns that are not included in the scheme.\n\n
-     {conversation}
